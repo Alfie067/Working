@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alfie's Timetable</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f4f4f4;
+        margin: 0;
+        padding: 0;
+      }
+      h1 {
+        text-align: center;
+        margin: 15px 0;
+      }
+
+      .timetable {
+        display: grid;
+        grid-template-columns: 120px repeat(7, 1fr); /* wider first column */
+        margin: 20px;
+        gap: 1px;
+        background: #ccc;
+      }
+
+      .timetable div {
+        padding: 5px;
+        height: 60px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        box-sizing: border-box;
+        overflow-wrap: break-word;
+        white-space: normal;
+        text-align: center;
+        background: #fff;
+        border: 1px solid #ccc;
+      }
+
+      /* TIME COLUMN FIX */
+      .time {
+        background: #fff !important;
+        color: #000 !important;
+        font-weight: bold;
+        font-size: 18px;
+        text-align: center;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .event {
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 4px;
+        box-sizing: border-box;
+        background-color: #ffcc99;
+        border-radius: 4px;
+      }
+
+      .countdown {
+        font-size: 0.9em;
+        margin-top: 3px;
+        text-align: center;
+        width: 100%;
+        color: #333;
+      }
+
+      .routines {
+        margin: 20px;
+        padding: 10px;
+        background: #d9ead3;
+        border-radius: 8px;
+      }
+
+      .today {
+        background: #ffe599 !important;
+      }
+
+      .highlight-row {
+        background-color: #fff2cc !important;
+        outline: none;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Alfie's Timetable</h1>
+    <div class="timetable" id="timetable"></div>
+    <div class="routines">
+      <h2>Routines</h2>
+      <ul id="routinesList"></ul>
+    </div>
+
+    <script>
+      const timetableData = [
+        { day: "Monday", time: "18:00", event: "Maths Tutoring" },
+        { day: "Tuesday", time: "19:00", event: "Air Cadets" },
+        { day: "Wednesday", time: "18:00", event: "Homework Maths & English" },
+        { day: "Thursday", time: "19:00", event: "Air Cadets" },
+        { day: "Friday", time: "17:30", event: "Homework Maths & English" },
+        { day: "Friday", time: "18:00", event: "Tutoring Maths" },
+        { day: "Saturday", time: "11:00", event: "Meeting With Summer" },
+        { day: "Sunday", time: "15:00", event: "English Tutoring" },
+      ];
+
+      const routines = [
+        "7am Wake-up",
+        "7:15am Up & Out Of Bed",
+        "7:30am Ready For School",
+        "7:35am Brush Teeth",
+        "7:50am-8:00am Tea",
+        "8:05am-8:15am Walk To Bus",
+        "3:10pm Finish School",
+        "4:30pm Walk Bear",
+      ];
+
+      const days = [
+        "Time",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+      ];
+      const times = [
+        "15:00",
+        "15:30",
+        "16:00",
+        "16:30",
+        "17:00",
+        "17:30",
+        "18:00",
+        "18:30",
+        "19:00",
+        "19:30",
+        "20:00",
+        "20:30",
+        "21:00",
+        "21:30",
+        "22:00",
+      ];
+
+      const timetableDiv = document.getElementById("timetable");
+      const routinesList = document.getElementById("routinesList");
+
+      // Generate timetable
+      for (let i = 0; i <= times.length; i++) {
+        for (let j = 0; j < days.length; j++) {
+          const cell = document.createElement("div");
+          if (i === 0) {
+            cell.textContent = days[j];
+            cell.style.fontWeight = "bold";
+            if (j === 0) cell.style.background = "#fff";
+          } else if (j === 0) {
+            cell.textContent = times[i - 1];
+            cell.classList.add("time");
+          } else {
+            const day = days[j];
+            const time = times[i - 1];
+            const event = timetableData.find(
+              (e) => e.day === day && e.time === time
+            );
+            if (event) {
+              cell.textContent = event.event;
+              cell.classList.add("event");
+              const countdown = document.createElement("div");
+              countdown.classList.add("countdown");
+              cell.appendChild(countdown);
+            }
+          }
+          timetableDiv.appendChild(cell);
+        }
+      }
+
+      // Add routines
+      routines.forEach((r) => {
+        const li = document.createElement("li");
+        li.textContent = r;
+        routinesList.appendChild(li);
+      });
+
+      // Highlight current day
+      const today = new Date().toLocaleString("en-GB", { weekday: "long" });
+      document.querySelectorAll(".timetable div").forEach((cell) => {
+        if (cell.textContent === today) {
+          cell.classList.add("today");
+        }
+      });
+
+      // Countdown + highlight next event
+      function updateCountdowns() {
+        const now = new Date();
+        let nextEventCell = null;
+        let nextEventTime = Infinity;
+
+        document.querySelectorAll(".event").forEach((cell) => {
+          const text = cell.firstChild.textContent;
+          const parentIndex = Array.from(timetableDiv.children).indexOf(cell);
+          const col = parentIndex % 8;
+          const row = Math.floor(parentIndex / 8);
+          const day = days[col];
+          const time = times[row - 1];
+          const eventData = timetableData.find(
+            (e) => e.day === day && e.time === time
+          );
+          if (!eventData) return;
+
+          const [hours, minutes] = eventData.time.split(":").map(Number);
+          const eventDate = new Date();
+          const dayIndex = days.indexOf(eventData.day);
+          const todayIndex = new Date().getDay() || 7;
+          let diffDays = dayIndex - todayIndex;
+          if (diffDays < 0) diffDays += 7;
+
+          eventDate.setDate(eventDate.getDate() + diffDays);
+          eventDate.setHours(hours, minutes, 0, 0);
+
+          const diff = eventDate - now;
+          const countdownDiv = cell.querySelector(".countdown");
+          if (diff > 0) {
+            const h = Math.floor(diff / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            countdownDiv.textContent = `Starts in ${h}h ${m}m ${s}s`;
+            if (diff < nextEventTime) {
+              nextEventTime = diff;
+              nextEventCell = cell;
+            }
+          } else {
+            countdownDiv.textContent = "Ongoing/Finished";
+          }
+        });
+
+        document
+          .querySelectorAll(".highlight-row")
+          .forEach((c) => c.classList.remove("highlight-row"));
+        if (nextEventCell) {
+          nextEventCell.classList.add("highlight-row");
+          nextEventCell.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }
+
+      setInterval(updateCountdowns, 1000);
+      updateCountdowns();
+    </script>
+  </body>
+</html>
